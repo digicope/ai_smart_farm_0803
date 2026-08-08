@@ -1,0 +1,148 @@
+{
+  "weather": {
+    "광주": {
+      "temperature_c": 24,
+      "humidity_pct": 68,
+      "rain_prob_pct": 20,
+      "wind": "약한 남서풍",
+      "farming_note": "기온·습도 양호. 오후 소나기 가능성 있으니 정식·파종 후 배수 확인."
+    },
+    "나주": {
+      "temperature_c": 26,
+      "humidity_pct": 72,
+      "rain_prob_pct": 40,
+      "wind": "약한 동풍",
+      "farming_note": "습도가 다소 높음. 병해 예방을 위해 과습 관리와 통풍에 유의."
+    },
+    "상주": {
+      "temperature_c": 22,
+      "humidity_pct": 55,
+      "rain_prob_pct": 10,
+      "wind": "약한 북풍",
+      "farming_note": "건조한 편. 관수 간격 점검 권장. 일교차 주의."
+    },
+    "진주": {
+      "temperature_c": 27,
+      "humidity_pct": 75,
+      "rain_prob_pct": 55,
+      "wind": "남풍",
+      "farming_note": "강수 가능성 높음. 병해충 방제 약제 살포 일정 조정 권장."
+    },
+    "화성": {
+      "temperature_c": 23,
+      "humidity_pct": 60,
+      "rain_prob_pct": 15,
+      "wind": "서풍",
+      "farming_note": "노지 작업에 무난. 아침 이슬이 마른 뒤 약제 살포 권장."
+    }
+  },
+  "diseases": [
+    {
+      "crop": "고추",
+      "symptom_keywords": ["반점", "잎 반점", "점무늬", "갈변"],
+      "disease_name": "점무늬병",
+      "cause": "고온다습 조건에서 병원성 진균 감염",
+      "treatment": "이병엽 제거, 통풍 확보, 등록 살균제 예방 살포. 과습 환경 개선."
+    },
+    {
+      "crop": "고추",
+      "symptom_keywords": ["시들", "시들음", "갑자기 죽음", "뿌리"],
+      "disease_name": "역병",
+      "cause": "토양 전염성 병원균, 배수 불량과 연작",
+      "treatment": "배수 개선, 이병주 제거, 등록 약제 관주. 건전 묘 사용 및 연작 회피."
+    },
+    {
+      "crop": "토마토",
+      "symptom_keywords": ["노란 반점", "잎 노란", "황화", "반점"],
+      "disease_name": "잎곰팡이병(황화 증상 포함 가능)",
+      "cause": "시설 내 다습·통풍 불량, 병원균 감염",
+      "treatment": "환기 강화, 이병엽 제거, 낮 습도 관리, 등록 살균제 살포."
+    },
+    {
+      "crop": "토마토",
+      "symptom_keywords": ["흰가루", "하얀 가루", "흰 분말"],
+      "disease_name": "흰가루병",
+      "cause": "건조와 다습이 반복되는 환경, 밀식",
+      "treatment": "밀식 완화, 통풍 개선, 초기 등록 약제 살포."
+    },
+    {
+      "crop": "사과",
+      "symptom_keywords": ["검은 반점", "검게", "반점", "낙엽"],
+      "disease_name": "검은별무늬병(흑성병)",
+      "cause": "강우 후 병원균 감염, 통풍 불량",
+      "treatment": "전정으로 통풍 확보, 낙엽 제거, 생육기 등록 살균제 예방 살포."
+    },
+    {
+      "crop": "배추",
+      "symptom_keywords": ["무름", "썩", "악취", "물컹"],
+      "disease_name": "무름병",
+      "cause": "세균 감염, 상처·과습·고온",
+      "treatment": "이병주 즉시 제거, 배수 관리, 작업 도구 소독, 등록 약제 활용."
+    },
+    {
+      "crop": "벼",
+      "symptom_keywords": ["잎 마름", "갈변", "줄무늬", "도열"],
+      "disease_name": "도열병",
+      "cause": "다습·질소 과다, 감수성 품종",
+      "treatment": "질소 과비 지양, 저항성 품종 활용, 발생 초기 등록 살균제 살포."
+    }
+  ],
+  "fertilizers": [
+    {
+      "crop": "고추",
+      "growth_stage": "정식기",
+      "recommend": "완효성 기비 + 인산·칼리 균형 시비",
+      "amount_guide": "10a 기준 질소 성분 과다 지양, 기비 위주 시비 후 활착 확인",
+      "caution": "정식 직후 진한 액비 집중 시비 금지. 뿌리 활착 후 추비."
+    },
+    {
+      "crop": "고추",
+      "growth_stage": "생육기",
+      "recommend": "질소·칼리 중심 추비",
+      "amount_guide": "생육 상태에 따라 2~3회 분할 추비",
+      "caution": "질소 과다시 도장·병해 증가. 착과 이후 칼리 비중 상향."
+    },
+    {
+      "crop": "배추",
+      "growth_stage": "생육기",
+      "recommend": "질소 추비 + 붕소 결핍 예방",
+      "amount_guide": "결구 전 질소 추비를 2회 내외로 분할",
+      "caution": "결구기 질소 과다시 무름병·저장성 저하 위험."
+    },
+    {
+      "crop": "배추",
+      "growth_stage": "정식기",
+      "recommend": "기비(질소·인산·칼리 균형)",
+      "amount_guide": "정식 전 전층 시비 후 충분히 섞어줌",
+      "caution": "비료가 뿌리에 직접 닿지 않도록 주의."
+    },
+    {
+      "crop": "벼",
+      "growth_stage": "이삭패는시기",
+      "recommend": "이삭거름(질소·칼리)",
+      "amount_guide": "출수 15~25일 전 이삭거름 시용",
+      "caution": "질소 과다시 도복·병해 위험. 잎색과 생육을 보고 가감."
+    },
+    {
+      "crop": "사과",
+      "growth_stage": "생육기",
+      "recommend": "질소 소량 추비 + 칼리 보강",
+      "amount_guide": "수세에 따라 조절, 과다 질소 지양",
+      "caution": "수확기 근접 시 질소 시비 자제. 칼슘 결핍에 유의."
+    },
+    {
+      "crop": "토마토",
+      "growth_stage": "생육기",
+      "recommend": "칼슘·칼리 중심 관리, 질소는 적정 유지",
+      "amount_guide": "착과 후 칼리 비중 상향, 관비는 소량 다회로",
+      "caution": "질소 과다시 웃자람·열과 증가. 칼슘 공급과 수분 관리 병행."
+    }
+  ],
+  "fertilizer_rate_per_10a": {
+    "고추": {"정식기": 12, "생육기": 8, "수확기": 4},
+    "배추": {"정식기": 15, "생육기": 10, "수확기": 3},
+    "벼": {"이삭패는시기": 9, "생육기": 7, "수확기": 0},
+    "토마토": {"정식기": 11, "생육기": 7, "수확기": 3},
+    "사과": {"생육기": 6, "수확기": 2}
+  }
+}

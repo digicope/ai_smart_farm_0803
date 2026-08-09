@@ -1,0 +1,65 @@
+{
+    "nodes": [
+        {
+            "id": "__start__",
+            "type": "node",
+            "label": "__start__"
+        },
+        {
+            "id": "analyzer",
+            "type": "node",
+            "label": "analyzer"
+        },
+        {
+            "id": "writer",
+            "type": "node",
+            "label": "writer"
+        },
+        {
+            "id": "reviewer",
+            "type": "node",
+            "label": "reviewer"
+        },
+        {
+            "id": "rewriter",
+            "type": "node",
+            "label": "rewriter"
+        },
+        {
+            "id": "final_reviewer",
+            "type": "node",
+            "label": "final_reviewer"
+        },
+        {
+            "id": "__end__",
+            "type": "node",
+            "label": "__end__"
+        }
+    ],
+    "edges": [
+        {
+            "source": "__start__",
+            "target": "analyzer"
+        },
+        {
+            "source": "analyzer",
+            "target": "writer"
+        },
+        {
+            "source": "reviewer",
+            "target": "rewriter"
+        },
+        {
+            "source": "rewriter",
+            "target": "final_reviewer"
+        },
+        {
+            "source": "writer",
+            "target": "reviewer"
+        },
+        {
+            "source": "final_reviewer",
+            "target": "__end__"
+        }
+    ]
+}

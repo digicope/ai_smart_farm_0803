@@ -1,9 +1,13 @@
 """
 지역별 식량작물 생산량 분석 대시보드 (실습 과제 답안)
 
-제공 CSV(2016~2025)를 읽어 지역·작물·연도별 생산량을 분석합니다.
-실행: streamlit run app.py
-중지: Ctrl + C
+실행 방법
+--------
+1) 이 파일이 있는 폴더로 이동
+2) 필요 패키지 설치:
+       pip install pandas plotly streamlit
+3) 앱 실행:
+       streamlit run app.py
 """
 
 from pathlib import Path
@@ -12,90 +16,70 @@ import pandas as pd
 import plotly.express as px
 import streamlit as st
 
+# ------------------------------------------------------------
+# 페이지 설정 (다른 st.* 호출보다 먼저, 한 번만)
+# ------------------------------------------------------------
 st.set_page_config(
     page_title="지역 식량작물 통계 대시보드",
     page_icon="🌾",
-    layout="centered",
+    layout="wide",
 )
 
 DATA_DIR = Path(__file__).resolve().parent
-CSV_CANDIDATES = [
-    "식량작물_생산량_정곡.csv",
-    "식량작물_생산량_정곡__20260808172613.csv",
-]
+DATA_FILE = DATA_DIR / "식량작물_생산량_정곡__20260808172613.csv"
+
 CROPS = ["미곡", "맥류", "잡곡", "두류", "서류"]
-YEARS = list(range(2016, 2026))  # 2016~2025 (2026 제외)
-
-
-def _to_number(value) -> float | None:
-    """'-', 빈 값, 쉼표 포함 숫자를 float로 변환합니다."""
-    if pd.isna(value):
-        return None
-    text = str(value).strip().replace(",", "")
-    if text in {"", "-", "nan", "None"}:
-        return None
-    return float(text)
-
-
-def _find_csv_path() -> Path:
-    for name in CSV_CANDIDATES:
-        path = DATA_DIR / name
-        if path.exists():
-            return path
-    parent = DATA_DIR.parent
-    for name in CSV_CANDIDATES:
-        path = parent / name
-        if path.exists():
-            return path
-    raise FileNotFoundError(
-        "CSV 파일이 없습니다. "
-        "식량작물_생산량_정곡.csv 또는 "
-        "식량작물_생산량_정곡__20260808172613.csv 를 같은 폴더에 두세요."
-    )
+YEARS = list(range(2016, 2026))  # 2016~2025 (2026년 제외)
 
 
 @st.cache_data
 def load_production_data() -> pd.DataFrame:
-    """통계청형 다중 헤더 CSV를 장형(long) 데이터로 변환합니다.
+    """KOSIS 식량작물 생산량(정곡) CSV를 장형식(long format)으로 정리합니다.
 
     원본 구조:
-    - 0행: 연도
-    - 1행: 지표명 (미곡:생산량 (톤) 등)
-    - 2행~: 지역별 값
+      - 0행: 연도
+      - 1행: 작물:지표 (예: 미곡:생산량 (톤))
+      - 2행~: 지역별 수치
+      - 시도별(1)/시도별(2): 지역명 (소계이면 시도별(1), 아니면 시도별(2) 사용)
     """
-    path = _find_csv_path()
-    raw = pd.read_csv(path, encoding="cp949", header=None)
+    raw = pd.read_csv(DATA_FILE, encoding="cp949", header=None)
 
-    years = raw.iloc[0, 2:].astype(str).str.strip().tolist()
-    metrics = raw.iloc[1, 2:].astype(str).str.strip().tolist()
-    body = raw.iloc[2:].reset_index(drop=True)
+    year_row = raw.iloc[0, 2:]
+    label_row = raw.iloc[1, 2:]
 
     records = []
-    for i in range(len(body)):
-        sido1 = str(body.iloc[i, 0]).strip()
-        sido2 = str(body.iloc[i, 1]).strip()
-        # 전남광주통합특별시처럼 하위 지역이 있으면 시도별(2) 사용
-        region = sido2 if sido2 != "소계" else sido1
+    for row_idx in range(2, len(raw)):
+        sido1 = str(raw.iloc[row_idx, 0]).strip()
+        sido2 = str(raw.iloc[row_idx, 1]).strip()
+        region = sido1 if sido2 == "소계" else sido2
 
-        for j, (year_text, metric) in enumerate(zip(years, metrics)):
-            year = int(float(year_text))
+        for col_idx in range(2, raw.shape[1]):
+            year = int(year_row.iloc[col_idx - 2])
             if year not in YEARS:
                 continue
 
-            crop = None
-            for name in CROPS:
-                if metric.startswith(f"{name}:") and "생산량" in metric:
-                    crop = name
-                    break
-            if crop is None:
+            label = str(label_row.iloc[col_idx - 2])
+            # 예: "미곡:생산량 (톤)" → crop=미곡, metric=생산량
+            if ":" not in label:
                 continue
+            crop, metric_part = label.split(":", 1)
+            if crop not in CROPS:
+                continue
+            if "생산량" not in metric_part:
+                continue
+
+            value = raw.iloc[row_idx, col_idx]
+            if pd.isna(value) or str(value).strip() in {"-", ""}:
+                production = None
+            else:
+                production = float(str(value).replace(",", ""))
 
             records.append(
                 {
                     "지역": region,
                     "연도": year,
                     "작물": crop,
-                    "생산량": _to_number(body.iloc[i, j + 2]),
+                    "생산량": production,
                 }
             )
 
@@ -104,6 +88,7 @@ def load_production_data() -> pd.DataFrame:
 
 
 def format_ton(value: float | None) -> str:
+    """생산량(톤)을 천 단위 구분 문자열로 표시합니다."""
     if value is None or pd.isna(value):
         return "-"
     return f"{value:,.0f}톤"
@@ -113,134 +98,169 @@ def format_ton(value: float | None) -> str:
 # 화면 구성
 # ------------------------------------------------------------
 st.title("지역 식량작물 통계 대시보드")
-st.caption("2016~2025년 지역별 식량작물 생산량 | Pandas + Plotly + Streamlit")
+st.caption("KOSIS 식량작물 생산량(정곡) · 2016~2025년 · Streamlit + Pandas + Plotly")
 
-try:
-    df = load_production_data()
-except FileNotFoundError as exc:
-    st.error(str(exc))
-    st.stop()
+df = load_production_data()
 
-if df.empty:
-    st.warning("분석할 생산량 데이터가 없습니다.")
-    st.stop()
-
-regions = [r for r in df["지역"].unique().tolist() if r != "전국"]
+regions = df["지역"].drop_duplicates().tolist()
+# 예시 화면과 같이 전라남도를 기본값으로
 default_region = "전라남도" if "전라남도" in regions else regions[0]
 
 col_a, col_b, col_c = st.columns(3)
 with col_a:
-    region = st.selectbox("지역 선택", regions, index=regions.index(default_region))
+    selected_region = st.selectbox("지역 선택", options=regions, index=regions.index(default_region))
 with col_b:
-    crop = st.selectbox("작물 선택", CROPS)
+    selected_crop = st.selectbox("작물 선택", options=CROPS, index=0)
 with col_c:
-    year = st.selectbox("연도 선택", YEARS, index=len(YEARS) - 1)
+    selected_year = st.selectbox("연도 선택", options=YEARS, index=len(YEARS) - 1)
 
-region_crop = df[(df["지역"] == region) & (df["작물"] == crop)].copy()
-region_crop_valid = region_crop.dropna(subset=["생산량"])
+# 선택 지역·작물의 연도별 시계열
+region_crop_df = df[
+    (df["지역"] == selected_region) & (df["작물"] == selected_crop)
+].copy()
+region_crop_df = region_crop_df.sort_values("연도")
 
-selected_row = region_crop.loc[region_crop["연도"] == year, "생산량"]
-selected_prod = float(selected_row.iloc[0]) if not selected_row.empty else None
-avg_10y = float(region_crop_valid["생산량"].mean()) if not region_crop_valid.empty else None
-max_10y = float(region_crop_valid["생산량"].max()) if not region_crop_valid.empty else None
+# --- 핵심 통계 ---
+year_row = region_crop_df.loc[region_crop_df["연도"] == selected_year, "생산량"]
+selected_production = float(year_row.iloc[0]) if len(year_row) and pd.notna(year_row.iloc[0]) else None
 
-# 선택 과제 1: 2016→2025 증감률
-prod_2016 = region_crop.loc[region_crop["연도"] == 2016, "생산량"]
-prod_2025 = region_crop.loc[region_crop["연도"] == 2025, "생산량"]
-v2016 = float(prod_2016.iloc[0]) if not prod_2016.empty and pd.notna(prod_2016.iloc[0]) else None
-v2025 = float(prod_2025.iloc[0]) if not prod_2025.empty and pd.notna(prod_2025.iloc[0]) else None
-if v2016 and v2016 != 0 and v2025 is not None:
-    change_rate = (v2025 - v2016) / v2016 * 100
-else:
-    change_rate = None
+valid = region_crop_df["생산량"].dropna()
+avg_10y = float(valid.mean()) if len(valid) else None
+max_10y = float(valid.max()) if len(valid) else None
 
+# 선택 과제 1: 2016 → 2025 생산량 증감률
+prod_2016_row = region_crop_df.loc[region_crop_df["연도"] == 2016, "생산량"]
+prod_2025_row = region_crop_df.loc[region_crop_df["연도"] == 2025, "생산량"]
+prod_2016 = float(prod_2016_row.iloc[0]) if len(prod_2016_row) and pd.notna(prod_2016_row.iloc[0]) else None
+prod_2025 = float(prod_2025_row.iloc[0]) if len(prod_2025_row) and pd.notna(prod_2025_row.iloc[0]) else None
+
+change_rate = None
+if prod_2016 is not None and prod_2025 is not None and prod_2016 != 0:
+    change_rate = (prod_2025 - prod_2016) / prod_2016 * 100
+
+st.divider()
 m1, m2, m3, m4 = st.columns(4)
-m1.metric(f"{year}년 생산량", format_ton(selected_prod))
+m1.metric(f"{selected_year}년 생산량", format_ton(selected_production))
 m2.metric("10년 평균", format_ton(avg_10y))
 m3.metric("최대 생산량", format_ton(max_10y))
-m4.metric(
-    "10년 증감률",
-    f"{change_rate:+.1f}%" if change_rate is not None else "-",
-)
+if change_rate is not None:
+    m4.metric(
+        "10년 증감률 (2016→2025)",
+        f"{change_rate:+.2f}%",
+        help=f"2016년 {format_ton(prod_2016)} → 2025년 {format_ton(prod_2025)}",
+    )
+else:
+    m4.metric("10년 증감률 (2016→2025)", "-")
 
 st.divider()
 
-# (3) 연도별 생산량 변화 - Line Chart
+# --- 연도별 생산량 변화 (Line Chart) ---
 st.subheader("연도별 생산량 변화")
-if region_crop_valid.empty:
-    st.info(f"{region} · {crop} 생산량 데이터가 없습니다.")
+line_df = region_crop_df.dropna(subset=["생산량"]).copy()
+if line_df.empty:
+    st.info(f"{selected_region} · {selected_crop} 생산량 데이터가 없습니다.")
 else:
     fig_line = px.line(
-        region_crop_valid,
+        line_df,
         x="연도",
         y="생산량",
         markers=True,
-        title=f"{region} {crop} 연도별 생산량 변화",
+        title=f"{selected_region} {selected_crop} 연도별 생산량 변화",
+        labels={"생산량": "생산량 (톤)", "연도": "연도"},
     )
-    fig_line.update_layout(xaxis_title="연도", yaxis_title="생산량(톤)")
-    fig_line.update_xaxes(dtick=1)
+    fig_line.update_layout(
+        xaxis=dict(dtick=1),
+        yaxis_tickformat=",",
+    )
     st.plotly_chart(fig_line, use_container_width=True)
 
 st.divider()
 
-# (4) 지역별 생산량 비교 - Bar Chart
+# --- 지역별 생산량 비교 (Bar Chart) ---
 st.subheader("지역별 생산량 비교")
-year_crop = df[(df["연도"] == year) & (df["작물"] == crop) & (df["지역"] != "전국")].copy()
-year_crop = year_crop.dropna(subset=["생산량"]).sort_values("생산량", ascending=False)
+compare_df = df[
+    (df["작물"] == selected_crop)
+    & (df["연도"] == selected_year)
+    & (df["지역"] != "전국")
+].copy()
+compare_df = compare_df.dropna(subset=["생산량"]).sort_values("생산량", ascending=False)
 
-if year_crop.empty:
-    st.info(f"{year}년 {crop} 지역별 생산량 데이터가 없습니다. (일부 작물은 2025년 미공표)")
+if compare_df.empty:
+    st.info(f"{selected_year}년 {selected_crop} 지역별 생산량 데이터가 없습니다.")
 else:
     fig_bar = px.bar(
-        year_crop,
-        x="생산량",
-        y="지역",
-        orientation="h",
-        text_auto=".0f",
-        title=f"{year}년 {crop} 생산량",
+        compare_df,
+        x="지역",
+        y="생산량",
+        title=f"{selected_year}년 {selected_crop} 생산량",
+        labels={"생산량": "생산량 (톤)", "지역": "지역"},
+        text="생산량",
     )
-    fig_bar.update_layout(
-        xaxis_title="생산량(톤)",
-        yaxis_title="지역",
-        yaxis={"categoryorder": "total ascending"},
-    )
+    fig_bar.update_traces(texttemplate="%{text:,.0f}", textposition="outside")
+    fig_bar.update_layout(yaxis_tickformat=",", xaxis_tickangle=-30)
     st.plotly_chart(fig_bar, use_container_width=True)
-
-    # 선택 과제 3: 지역별 생산량 순위
-    st.markdown(f"**{year}년 {crop} 지역별 생산량 순위**")
-    rank_df = year_crop.reset_index(drop=True).copy()
-    rank_df.insert(0, "순위", range(1, len(rank_df) + 1))
-    rank_df["생산량"] = rank_df["생산량"].map(lambda v: f"{v:,.0f}")
-    st.dataframe(rank_df[["순위", "지역", "생산량"]], use_container_width=True, hide_index=True)
 
 st.divider()
 
-# 선택 과제 2: 식량작물별 비교
-st.subheader(f"{region} 식량작물별 생산량 비교 ({year}년)")
-crop_cmp = df[(df["지역"] == region) & (df["연도"] == year)].copy()
-crop_cmp = crop_cmp.dropna(subset=["생산량"])
-crop_cmp["작물"] = pd.Categorical(crop_cmp["작물"], categories=CROPS, ordered=True)
-crop_cmp = crop_cmp.sort_values("작물")
+# --- 선택 과제 2: 식량작물별 비교 ---
+st.subheader("식량작물별 비교")
+st.caption(f"{selected_region} · {selected_year}년 기준 미곡/맥류/잡곡/두류/서류 생산량")
+crop_compare_df = df[
+    (df["지역"] == selected_region) & (df["연도"] == selected_year)
+].copy()
+crop_compare_df["작물"] = pd.Categorical(crop_compare_df["작물"], categories=CROPS, ordered=True)
+crop_compare_df = crop_compare_df.sort_values("작물")
+crop_compare_plot = crop_compare_df.dropna(subset=["생산량"])
 
-if crop_cmp.empty:
-    st.info(f"{region} · {year}년 작물별 생산량 데이터가 없습니다.")
+if crop_compare_plot.empty:
+    st.info(f"{selected_region} · {selected_year}년 작물별 생산량 데이터가 없습니다.")
 else:
     fig_crop = px.bar(
-        crop_cmp,
+        crop_compare_plot,
         x="작물",
         y="생산량",
-        text_auto=".0f",
-        title=f"{region} {year}년 식량작물별 생산량",
+        title=f"{selected_region} {selected_year}년 식량작물별 생산량",
+        labels={"생산량": "생산량 (톤)", "작물": "작물"},
+        text="생산량",
         color="작물",
+        category_orders={"작물": CROPS},
     )
-    fig_crop.update_layout(xaxis_title="작물", yaxis_title="생산량(톤)", showlegend=False)
+    fig_crop.update_traces(texttemplate="%{text:,.0f}", textposition="outside")
+    fig_crop.update_layout(showlegend=False, yaxis_tickformat=",")
     st.plotly_chart(fig_crop, use_container_width=True)
 
 st.divider()
 
+# --- 선택 과제 3: 지역별 생산량 순위 ---
+st.subheader("지역별 생산량 순위")
+st.caption(f"{selected_year}년 {selected_crop} 생산량 기준 (전국 제외)")
+rank_df = compare_df.copy()
+if rank_df.empty:
+    st.info(f"{selected_year}년 {selected_crop} 순위 데이터가 없습니다.")
+else:
+    rank_df = rank_df.reset_index(drop=True)
+    rank_df.insert(0, "순위", range(1, len(rank_df) + 1))
+    rank_df["순위"] = rank_df["순위"].map(lambda n: f"{n}위")
+    rank_display = rank_df[["순위", "지역", "생산량"]].copy()
+    rank_display["생산량"] = rank_display["생산량"].map(lambda x: f"{x:,.0f}톤")
+    st.dataframe(rank_display, use_container_width=True, hide_index=True)
+
+st.divider()
+
+# --- 원본 데이터 ---
 st.subheader("원본 데이터")
-display_df = region_crop.copy()
+display_df = region_crop_df.copy()
 display_df["생산량"] = display_df["생산량"].map(
-    lambda v: f"{v:,.0f}" if pd.notna(v) else "-"
+    lambda x: f"{x:,.0f}" if pd.notna(x) else "-"
 )
 st.dataframe(display_df, use_container_width=True, hide_index=True)
+
+with st.expander("데이터 안내"):
+    st.markdown(
+        f"""
+        - 출처: [KOSIS](https://kosis.kr/) 식량작물 생산량(정곡)
+        - 파일: `{DATA_FILE.name}`
+        - 분석 기간: 2016~2025년
+        - 선택: **{selected_region}** · **{selected_crop}** · **{selected_year}년**
+        """
+    )

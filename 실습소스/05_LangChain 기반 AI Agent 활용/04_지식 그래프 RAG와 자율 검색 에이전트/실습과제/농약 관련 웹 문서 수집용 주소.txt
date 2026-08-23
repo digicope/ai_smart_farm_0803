@@ -1,0 +1,18 @@
+[농약 관련 웹 문서 수집용 주소]
+
+1. 농약이란?:
+https://psis.rda.go.kr/psis/cont/contentMain.ps?menuId=PS00384
+
+2. 농약 안전 사용
+
+-농약중독의 증상 :
+https://psis.rda.go.kr/psis/cont/contentMain.ps?menuId=PS00960
+
+-농약 중독 시 응급처치법 :
+https://psis.rda.go.kr/psis/cont/contentMain.ps?menuId=PS00300
+
+-농약 사용시 주의사항 :
+https://psis.rda.go.kr/psis/cont/contentMain.ps?menuId=PS00961
+
+-농약 사용후 관리 :
+https://psis.rda.go.kr/psis/cont/contentMain.ps?menuId=PS00962

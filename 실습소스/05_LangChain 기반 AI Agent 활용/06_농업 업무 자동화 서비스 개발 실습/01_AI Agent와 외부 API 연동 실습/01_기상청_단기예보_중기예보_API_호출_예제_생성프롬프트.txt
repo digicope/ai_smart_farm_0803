@@ -1,0 +1,72 @@
+01_AI Agent와 외부 API 연동 실습 폴더 아래 문서를 참조하여
+기상청 단기예보·중기예보 API 호출 파이썬 예제 노트북을 만들어줘.
+
+■ 참고 문서
+- 같은 폴더의 `기상청_단기예보_중기예보_API_발급방법_요약.md`를 반드시 읽고 반영할 것
+- 두 API는 공공데이터포털의 별도 서비스이므로 인증키도 분리해서 사용할 것
+
+■ 결과물
+- Jupyter Notebook 1개
+- 파일명: `기상청_단기예보_중기예보_API_호출_예제.ipynb`
+- 저장 위치: `01_AI Agent와 외부 API 연동 실습` 폴더
+- 설명 마크다운은 한글로 작성
+- 교육용 예제이므로 단계별로 셀을 나누고, 각 단계 앞에 간단한 설명을 넣을 것
+
+■ API 키
+- API 키는 코드에 하드코딩하지 말 것
+- `C:\env\.env`에서 python-dotenv로 불러올 것
+- 환경변수 이름:
+  - 단기예보: `KMA_SHORT_TERM_KEY`
+  - 중기예보: `KMA_MID_TERM_KEY`
+- 키 값 자체는 print하지 말 것
+- 키가 없으면 명확한 예외를 발생시킬 것
+
+■ 사용할 패키지
+- requests, pandas, python-dotenv
+- 표준 라이브러리 datetime, zoneinfo, urllib.parse 사용 가능
+
+■ 구현 내용
+
+[1] 환경 준비
+- 필요한 모듈 import
+- 시간대는 Asia/Seoul 사용
+
+[2] API 키 로드
+- `C:\env\.env`에서 `KMA_SHORT_TERM_KEY`, `KMA_MID_TERM_KEY` 읽기
+- 로드 완료 메시지만 출력하고 키 값은 출력하지 않기
+
+[3] 공통 호출 함수
+- 공공데이터포털 JSON API 호출 헬퍼 작성
+- serviceKey 이중 인코딩을 피하기 위해 unquote 후 requests params로 전달
+- dataType=JSON, numOfRows는 충분히 크게(예: 1000)
+- 응답이 JSON이 아니거나 resultCode가 00이 아니면 예외 처리
+
+[4] 단기예보 조회서비스 (`KMA_SHORT_TERM_KEY` 사용)
+- 기본 URL: https://apis.data.go.kr/1360000/VilageFcstInfoService_2.0
+- 예제 지점: 서울 종로 격자 nx=60, ny=127
+- 초단기실황: getUltraSrtNcst
+- 단기예보: getVilageFcst
+- 발표시각(base_date, base_time)은 현재 시각 기준으로 자동 계산
+  - 단기예보: 02/05/08/11/14/17/20/23시, 발표 10분 이후부터 조회
+  - 초단기실황: 매시 정시, 약 10분 이후부터 조회
+- 카테고리 코드(TMP, POP, SKY, PTY 등)를 한글 항목명으로 변환
+- 단기예보는 시간별 표(pandas DataFrame)로 보기 좋게 정리
+
+[5] 중기예보 조회서비스 (`KMA_MID_TERM_KEY` 사용)
+- 기본 URL: https://apis.data.go.kr/1360000/MidFcstInfoService
+- 중기전망: getMidFcst (stnId=109, 서울·인천·경기도)
+- 중기육상예보: getMidLandFcst (regId=11B00000, 서울·인천·경기도)
+- 중기기온: getMidTa (regId=11B10101, 서울)
+- 발표시각 tmFc는 06시/18시 중 최신값으로 자동 계산 (발표 10분 이후)
+- 육상예보용 regId와 기온예보용 regId가 다르다는 점을 설명에 명시
+- 육상(날씨·강수확률)과 기온(최저·최고)을 +3일~+10일 표로 합치기
+
+[6] 농업 Agent 활용 안내
+- 문서의 핵심처럼 단기 Tool / 중기 Tool을 키와 위치 파라미터까지 분리해서 설명
+- 단기는 격자 nx, ny / 중기는 육상·기온 regId를 쓴다는 점을 정리
+
+■ 주의
+- 위·경도를 그대로 쓰지 말 것. 단기예보는 격자(nx, ny), 중기예보는 구역코드(regId/stnId)
+- API 키, 토큰, 비밀번호를 노트북에 넣거나 출력하지 말 것
+- 불필요한 README, requirements.txt, 추가 문서는 만들지 말 것
+- 가능하면 실제 API를 호출해 동작하는지 확인한 뒤 마무리할 것

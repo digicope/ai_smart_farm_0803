@@ -7,3 +7,7 @@ https://adp.rda.go.kr/portal/pub/data/dataDetail.do?dataId=4130&dataTypeCd=PBLCA
 
 #### 스마트팜 현장 농가 데이터(2024) : 농업기술 데이터 플랫폼
 https://adp.rda.go.kr/portal/pub/data/dataDetail.do?dataId=4163&dataTypeCd=PBLCATE
+<br>
+
+#### pdf 데이터 구글 공유드라이브 :
+https://drive.google.com/drive/folders/14rvxlsK9VQh2CvbxY9bmnO-BTUSRT1wR

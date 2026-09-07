@@ -1,0 +1,7 @@
+train: /content/frozen/images/train/ 
+val: /content/frozen/images/train/
+
+# number of classes
+nc: 3
+# class names
+names: [ 'Anna', 'Elsa', 'Olaf' ]
